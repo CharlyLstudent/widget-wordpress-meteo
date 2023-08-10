@@ -12,17 +12,31 @@ class Weather_Widget extends WP_Widget {
         parent::__construct(
             'weather_widget',
             'Widget Météo',
-            array('description' => ' La météo en direct des villes de France !')
+            array(
+                'customize_selective_refresh' => true,
+            )
         );
     }
 
     public function form($instance) {
-        // Récupérer les valeurs actuelles ou définir des valeurs par défaut
-        $city = isset($instance['city']) ? esc_attr($instance['city']) : 'Belley';
-        $country = isset($instance['country']) ? esc_attr($instance['country']) : 'France';
-        $language = isset($instance['language']) ? esc_attr($instance['language']) : 'french';
+        //get the values of the current city, or set by default with some values
+        //esc_attr WordPress method to Escaping for HTML attributes. avoiding XSS, more security
+        $city = 'Belley';
+        if (isset($instance['city'])) {
+            $city = esc_attr($instance['city']);
+        }
 
-        // Afficher le formulaire
+        $country = 'France';
+        if (isset($instance['country'])) {
+            $country = esc_attr($instance['country']);
+        }
+
+        $language = 'french';
+        if (isset($instance['language'])) {
+            $language = esc_attr($instance['language']);
+        }
+
+        // Display the form to fill up on the wodget settings
         ?>
         <p>
             <label for="<?php echo $this->get_field_id('city'); ?>">Ville:</label>
@@ -38,7 +52,7 @@ class Weather_Widget extends WP_Widget {
         </p>
         <?php
     }
-
+//sanitize_text_field,Word Press method to Sanitizes a string from user input or from the database.
     public function update($new_instance, $old_instance) {
         $instance = $old_instance;
         $instance['city'] = sanitize_text_field($new_instance['city']);
@@ -50,17 +64,30 @@ class Weather_Widget extends WP_Widget {
     public function widget($args, $instance) {
         echo $args['before_widget'];
 
-        $city = isset($instance['city']) ? $instance['city'] : 'Belley'; // Ville
-        $country = isset($instance['country']) ? $instance['country'] : 'France'; // Pays
-        $language = isset($instance['language']) ? $instance['language'] : 'french'; // Langue
+        $city = 'Belley';
+        if (isset($instance['city'])) {
+            $city = $instance['city'];
+        }
+
+        $country = 'France';
+        if (isset($instance['country'])) {
+            $country = $instance['country'];
+        }
+
+        $language = 'french';
+        if (isset($instance['language'])) {
+            $language = $instance['language'];
+        }
+
 
         $api_url = "https://www.weatherwp.com/api/common/publicWeatherForLocation.php?city=$city&country=$country&language=$language";
 
+        //Word Press method to retrieve only the body from the raw response.
         $response = wp_remote_get($api_url);
-
+        //Word Press method to Checks whether the given variable is a WordPress Error.
         if (!is_wp_error($response)) {
+        //Word Press method that performs an HTTP request using the GET method and returns its response.
             $data = json_decode(wp_remote_retrieve_body($response));
-
             if ($data && $data->status === 200) {
                 $temperature = $data->temp;
                 $icon_url = $data->icon;
