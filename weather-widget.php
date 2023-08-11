@@ -62,44 +62,52 @@ class Weather_Widget extends WP_Widget {
     }
 
     public function widget($args, $instance) {
-        echo $args['before_widget'];
 
         $city = 'Belley';
         if (isset($instance['city'])) {
-            $city = $instance['city'];
+            $city = esc_attr($instance['city']);
         }
 
         $country = 'France';
         if (isset($instance['country'])) {
-            $country = $instance['country'];
+            $country = esc_attr($instance['country']);
         }
 
         $language = 'french';
         if (isset($instance['language'])) {
-            $language = $instance['language'];
+            $language = esc_attr($instance['language']);
         }
 
+        echo $args['before_widget'];
+        ?>
+        <div id="weather-widget"></div>
+        <script>
+            var city = '<?php echo esc_js($city); ?>';
+            var country = '<?php echo esc_js($country); ?>';
+            var language = '<?php echo esc_js($language); ?>';
+            var apiUrl = "https://www.weatherwp.com/api/common/publicWeatherForLocation.php?city=" + city + "&country=" + country + "&language=" + language;
 
-        $api_url = "https://www.weatherwp.com/api/common/publicWeatherForLocation.php?city=$city&country=$country&language=$language";
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.status === 200) {
+                        var temperature = data.temp;
+                        var iconUrl = data.icon;
+                        var description = data.description;
 
-        //Word Press method to retrieve only the body from the raw response.
-        $response = wp_remote_get($api_url);
-        //Word Press method to Checks whether the given variable is a WordPress Error.
-        if (!is_wp_error($response)) {
-        //Word Press method that performs an HTTP request using the GET method and returns its response.
-            $data = json_decode(wp_remote_retrieve_body($response));
-            if ($data && $data->status === 200) {
-                $temperature = $data->temp;
-                $icon_url = $data->icon;
-                $description = $data->description;
-
-                echo "<h3>Météo de $city - $temperature °C - $description</h3>";
-                echo "<img src='$icon_url' alt='Weather Icon'>";
-            } else {
-                echo "Impossible de récupérer les données météo pour $city.";
-            }
-        }
-
+                        var weatherWidget = document.getElementById('weather-widget');
+                        weatherWidget.innerHTML = "<h3>Météo de " + city + " - " + temperature + " °C - " + description + "</h3><img src='" + iconUrl + "' alt='Weather Icon'>";
+                    } else {
+                        var weatherWidget = document.getElementById('weather-widget');
+                        weatherWidget.innerHTML = "Impossible de récupérer les données météo pour " + city + ".";
+                    }
+                })
+                .catch(error => {
+                    var weatherWidget = document.getElementById('weather-widget');
+                    weatherWidget.innerHTML = "Erreur lors de la récupération des données météo pour " + city + ".";
+                });
+        </script>
+        <?php
         echo $args['after_widget'];
     }
 
